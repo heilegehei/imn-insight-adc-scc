@@ -5,7 +5,7 @@
   "meta_learner": "L2 LogisticRegression",
   "positive_class": "Adenocarcinoma (1)",
   "negative_class": "Squamous cell carcinoma (0)",
-  "scope": "Conditional classification between confirmed adenocarcinoma and squamous cell carcinoma; educational demonstration only.",
+  "scope": "Conditional classification between confirmed adenocarcinoma and squamous cell carcinoma.",
   "primary_layer": "I_plus_M_plus_N",
   "direct_input_count": 27,
   "primary_selected_direct_count": 7,
