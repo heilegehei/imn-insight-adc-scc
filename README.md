@@ -1,5 +1,7 @@
 # IMN Insight · 腺癌 vs 鳞癌在线工具
 
+在线体验：[IMN Insight](https://imn-insight-adc-scc.streamlit.app/)。
+
 工具采用黑白分区、大标题、蓝色交互和响应式布局。主视觉由炎症细胞、抗体盾牌、营养叶片及分子元素组成，对应 I / M / N 三个层级。界面为英文。
 
 ## 功能
@@ -52,7 +54,7 @@ macOS / Linux：安装 Python 3.13 后执行 `bash run_mac.sh`。macOS 如 Light
 | I + M | 6 | 0.7349164121493799 |
 | I + M + N | 13 | 0.6194277055171358 |
 
-阈值沿用 `04_results/02_validation/fixed_threshold_confusion_matrices.csv` 中的开发集固定阈值。概率 ≥ 阈值判为腺癌，否则为鳞癌。腺癌 = 1，鳞癌 = 0。
+阈值沿用既有开发集固定阈值，不在应用中重新估计。概率 ≥ 阈值判为腺癌，否则为鳞癌。腺癌 = 1，鳞癌 = 0。
 
 完整输入 27 项：WBC、NEUT、NEUT_PCT、MONO、MONO_PCT、PLT、RDW_CV、CRP、FIB、LDH、LYMPH、LYMPH_PCT、EOS、EOS_PCT、BASO、BASO_PCT、HGB、ALB、TP、GLB、PA、GLU、TG、TC、HDL_C、LDL_C、UA。界面及字典均列明单位。
 
