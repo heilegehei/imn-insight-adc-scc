@@ -1,0 +1,22 @@
+{
+  "name": "IMN Insight — Adenocarcinoma vs Squamous",
+  "model": "Top-2 Stacking",
+  "members": ["RotationForest", "ExtraTrees"],
+  "meta_learner": "L2 LogisticRegression",
+  "positive_class": "Adenocarcinoma (1)",
+  "negative_class": "Squamous cell carcinoma (0)",
+  "scope": "Conditional classification between confirmed adenocarcinoma and squamous cell carcinoma; educational demonstration only.",
+  "primary_layer": "I_plus_M_plus_N",
+  "direct_input_count": 27,
+  "primary_selected_direct_count": 7,
+  "fixed_composite_count": 6,
+  "thresholds": {"I": 0.7005904515139433, "I_plus_M": 0.7349164121493799, "I_plus_M_plus_N": 0.6194277055171358},
+  "threshold_source": "04_results/02_validation/fixed_threshold_confusion_matrices.csv",
+  "model_sha256": "8ae7aa19e9608cbacac38736361e7d523502e411e31575446e2e7af8afe6a276",
+  "frozen_runtime_sha256": "860064cc99f67ebf9399f04aadd764506410cb3d7fca8b4e3815b1eedcabfdbc",
+  "formal_factory_sha256": "b6f17698e5b2583d4b6d04843d44e8b80c3a252972cb733f3f85ae017e8347ec",
+  "integrated_factory_sha256": "11ab536c6921320963928a2a5730d8db8ea3a620d5d7c619450f8dd5564e74c5",
+  "interface_version": "1.1.0",
+  "created": "2026-09-26",
+  "interface_updated": "2026-09-27"
+}

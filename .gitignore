@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.streamlit/secrets.toml
+*.log
+.DS_Store
+local_qa/
+test_report.local.json
+/VERIFICATION.md
