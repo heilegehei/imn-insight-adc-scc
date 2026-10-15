@@ -53,6 +53,9 @@
     }
   },
   "displayed_probability": "saved layer-specific Platt-calibrated weighted probability",
+  "completed_feature_precision_decimals": 10,
+  "rotation_pca_projection_precision_decimals": 12,
+  "numerical_inference_rule": "Completed direct/composite features round10; Rotation Forest PCA uses fixed-order einsum and round12 projected features before existing tree splits. Suppresses batch/platform BLAS noise; no refitting or evaluation-label use.",
   "calibration_and_threshold_source": "A-development 10-fold OOF predictions only",
   "model_sha256": "51fcba4aa45ba04c5d9e526332c10e21e7629e74cbc6702c6eccdef2263c88f8",
   "weighted_runtime_sha256": "8ed9106b7ef7ece359749bb98031331dcedb3108f9a46ac285c6277b10d86563",
