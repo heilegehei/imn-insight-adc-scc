@@ -72,7 +72,7 @@ macOS / Linux：安装 Python 3.13 后执行 `bash run_mac.sh`。macOS 如 Light
 
 - `app.py` / `style.css`：交互界面与视觉样式。
 - `model_runtime.py`：单位说明、输入检查、原推理路径适配及下载。
-- `runtime/weighted_runtime.py`：分析与部署共享的固定Weighted推理路径；完成插补及复合指标后保留10位小数，消除批量矩阵计算约10⁻¹³的数值噪声在树分裂边界上的放大，不作临床数值截尾。
+- `runtime/weighted_runtime.py`：分析与部署共享的固定Weighted推理路径；完成插补及复合指标后保留10位小数。Rotation Forest另采用固定收缩顺序的PCA投影，并在既有树分裂前保留投影12位小数，规范零空间的浮点伪信号。此数值稳定化会改变少量原始分支概率，因此分析与部署全部统一重算；不重新拟合树或作临床数值截尾。
 - `runtime/frozen_runtime.py` / `runtime/runtime_support/`：可信自定义分类器及复合指标支持代码，SHA-256 可核对。
 - `assets/weighted_voting_model_package.pkl`：2026-10-15重建的最终拟合及其固定权重、校准和阈值，仅含推理必需对象，不包含患者表格。
 - `assets/model_manifest.json`：模型指纹、版本与阈值来源。

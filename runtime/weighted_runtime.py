@@ -40,13 +40,45 @@ def calibrate(spec: dict, probability: np.ndarray) -> np.ndarray:
     return expit(calibration["intercept"] + calibration["slope"] * np.log(clipped / (1 - clipped)))
 
 
+def predict_member_probability(model, x: np.ndarray) -> np.ndarray:
+    """Portable inference, including canonical Rotation Forest PCA projections.
+
+    No model fitting or split modification. Explicit contraction order and
+    12-place projected features prevent BLAS shape/platform noise from taking
+    different branches at numerically zero PCA split points.
+    """
+    if type(model).__name__ != "RotationForest":
+        return model.predict_proba(x)[:, 1]
+    normalized = np.asarray(x, dtype=float)[:, model._useful_atts]
+    normalized = (normalized - model._min) / model._ptp
+    total = np.zeros((len(x), model.n_classes_), dtype=float)
+    for tree, pcas, groups in zip(model.estimators_, model._pcas, model._groups):
+        projections = []
+        for pca, group in zip(pcas, groups):
+            values = normalized[:, group]
+            projected = np.einsum("ij,kj->ik", values, pca.components_, optimize=False)
+            projected -= np.einsum("j,kj->k", pca.mean_, pca.components_, optimize=False)
+            if pca.whiten:
+                scale = np.maximum(np.sqrt(pca.explained_variance_), np.finfo(float).eps)
+                projected /= scale
+            projections.append(projected)
+        rotated = np.round(np.nan_to_num(np.concatenate(projections, axis=1), nan=0.0, posinf=0.0, neginf=0.0), 12)
+        probabilities = tree.predict_proba(rotated)
+        if probabilities.shape[1] == model.n_classes_:
+            total += probabilities
+        else:
+            for index, label in enumerate(tree.classes_):
+                total[:, model._class_dictionary[label]] += probabilities[:, index]
+    return (total / model._n_estimators)[:, 1]
+
+
 def predict_raw_features(package: dict, layer: str, features: pd.DataFrame | np.ndarray) -> np.ndarray:
     spec = package["layers"][layer]
     x = features.loc[:, spec["columns"]].to_numpy(float) if isinstance(features, pd.DataFrame) else np.asarray(features, dtype=float)
     x = np.round(x, package.get("inference_precision_decimals", 10))
     result = np.zeros(len(x), dtype=float)
     for name in spec["member_order"]:
-        result += spec["weights"][name] * spec["base_members"][name].predict_proba(x)[:, 1]
+        result += spec["weights"][name] * predict_member_probability(spec["base_members"][name], x)
     return result
 
 

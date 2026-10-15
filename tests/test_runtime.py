@@ -130,6 +130,14 @@ class RuntimeTests(unittest.TestCase):
                 col = f"{layer}__adenocarcinoma_probability"
                 self.assertAlmostEqual(batch.loc[i, col], single.loc[0, col], places=12)
 
+    def test_complete_inputs_match_across_batch_shapes(self):
+        single = rt.score_frame(self.example)["results"].iloc[0]
+        for n in (2, 3, 5, 10):
+            result = rt.score_frame(pd.concat([self.example] * n, ignore_index=True))["results"]
+            for layer in rt.LAYERS:
+                col = f"{layer}__adenocarcinoma_probability"
+                np.testing.assert_allclose(result[col], single[col], atol=1e-12, rtol=0)
+
     def test_export_protects_formula_ids(self):
         content = rt.export_csv(pd.DataFrame({"analysis_row_id": ["=1+1", " @SUM(A1)", "ordinary"], "p": [.2, .3, .4]})).decode("utf-8-sig")
         self.assertIn("'=1+1", content)
