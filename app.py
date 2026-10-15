@@ -37,7 +37,7 @@ def render_hero():
     st.markdown(f'''
     <nav class="globalnav"><div class="globalnav-inner"><span class="nav-brand" aria-label="IMN Insight">IMN</span>
     <div class="nav-links"><a href="#overview">Overview</a><a href="#assessment">Assessment</a><a href="#model">Model</a><a href="#batch">Batch</a></div>
-    <span class="nav-model">Top-2 Stacking · Three IMN layers</span></div></nav>
+    <span class="nav-model">Weighted voting · Three IMN layers</span></div></nav>
     <div class="promo"><b>27 laboratory inputs.</b>&nbsp; Six derived indices. One saved model pathway.</div>
     <section class="hero"><div class="hero-copy"><div class="product-kicker">IMN Insight</div>
     <h1>Adenocarcinoma.<br>Or squamous.</h1>
@@ -46,12 +46,12 @@ def render_hero():
     <div class="hero-stage"><div class="imn-visual">
     <img class="imn-domain-art" src="data:image/svg+xml;base64,{domain_visual}" alt="Connected inflammatory cell, antibody shield, and nutrient leaves representing the three IMN domains.">
     <div class="imn-domain-labels"><div><span class="domain-letter inflammation">I</span><span>Inflammation</span></div><div><span class="domain-letter immunity">M</span><span>Immunity</span></div><div><span class="domain-letter nutrition">N</span><span>Nutrition</span></div></div></div>
-    <div class="stage-spec">13 final variables &nbsp; · &nbsp; 2 base learners &nbsp; · &nbsp; 3 IMN layers</div></div></section>
+    <div class="stage-spec">13 final variables &nbsp; · &nbsp; Weighted voting &nbsp; · &nbsp; 3 IMN layers</div></div></section>
     <section id="overview" class="content-tile"><div class="tile-intro"><div class="tile-eyebrow">The model, at a glance</div>
-    <h2>A clear view of the full picture.</h2><p>Inflammation, immunity, and nutrition / metabolism. Enter the laboratory measurements and compare the three saved Stacking outputs.</p></div>
+    <h2>A clear view of the full picture.</h2><p>Inflammation, immunity, and nutrition / metabolism. Enter the laboratory measurements and compare the three calibrated Weighted voting outputs.</p></div>
     <div class="spec-row"><div class="spec"><span class="spec-label">Full IMN model variables</span><span class="spec-value">13</span><span class="spec-caption">7 selected direct predictors + 6 composite indices</span></div>
-    <div class="spec"><span class="spec-label">Complementary base learners</span><span class="spec-value">2</span><span class="spec-caption">Rotation Forest + Extra Trees</span></div>
-    <div class="spec"><span class="spec-label">Primary decision threshold</span><span class="spec-value">0.6194</span><span class="spec-caption">Saved full IMN threshold · not 0.5</span></div></div></section>
+    <div class="spec"><span class="spec-label">Candidate base learners</span><span class="spec-value">14</span><span class="spec-caption">Layer-specific non-negative voting weights</span></div>
+    <div class="spec"><span class="spec-label">Primary decision threshold</span><span class="spec-value">{THRESHOLDS[MAIN_LAYER]:.4f}</span><span class="spec-caption">Saved full IMN threshold · calibrated probability</span></div></div></section>
     ''', unsafe_allow_html=True)
 
 
@@ -147,13 +147,13 @@ def render_model():
         intro("Inside the model", "A consistent path from input to output.", "The interface applies the existing saved model. It does not retrain, tune, or select a new threshold.")
         st.markdown('''<div class="model-flow">
         <div class="flow-card"><div class="flow-step">01 / COMPLETE</div><div class="flow-title">Laboratory inputs.</div><div class="flow-copy">27 direct laboratory variables.<br>Missing values use the saved deterministic MICE-style imputer. Six prespecified indices are then calculated.</div></div>
-        <div class="flow-card"><div class="flow-step">02 / COMBINE</div><div class="flow-title">Two learners.<br>One Stacking model.</div><div class="flow-copy">Rotation Forest and Extra Trees feed the saved L2 logistic meta-learner. This is not a simple average of probabilities.</div></div>
+        <div class="flow-card"><div class="flow-step">02 / COMBINE</div><div class="flow-title">Weighted votes.<br>One combined probability.</div><div class="flow-copy">Each layer combines base-learner probabilities with its saved non-negative weights. Its saved logistic calibration map then gives the displayed probability.</div></div>
         <div class="flow-card"><div class="flow-step">03 / COMPARE</div><div class="flow-title">Three IMN layers.</div><div class="flow-copy">I: 4 variables<br>I + M: 6 variables<br>I + M + N: 13 variables<br>Each layer uses its own saved models and fixed decision threshold.</div></div></div>''', unsafe_allow_html=True)
         with st.expander("Input dictionary and model details"):
             dictionary = pd.DataFrame(INPUT_FIELDS).drop(columns="example").rename(columns={"name": "Variable", "label": "Measurement", "unit": "Unit", "group": "Domain"})
             st.dataframe(dictionary, hide_index=True, width="stretch")
             st.caption("TC accepts the CSV alias CHOL without numerical conversion. RDW means RDW-CV; PA is mg/dL. No age, sex, smoking history, or tumor markers enter the model.")
-            st.caption("AGR uses ALB / (TP − ALB), not the independently measured GLB. Blank values are completed; no additional clipping or recalibration is applied by the interface.")
+            st.caption("AGR uses ALB / (TP − ALB), not the independently measured GLB. Blank values use the saved imputer. Each layer applies its saved calibration map and A-development threshold; neither is refitted by the interface.")
             st.code(f"Model SHA-256\n{MODEL_SHA256}", language=None)
 
 
@@ -204,4 +204,4 @@ values = render_inputs()
 render_results(values)
 render_model()
 render_batch()
-st.markdown(f'<footer class="footer"><b>IMN Insight · Adenocarcinoma vs Squamous</b><br>Not for clinical diagnosis or treatment decisions.<br>Top-2 Stacking · Model fingerprint {MODEL_SHA256[:12]} · Interface 1.1</footer>', unsafe_allow_html=True)
+st.markdown(f'<footer class="footer"><b>IMN Insight · Adenocarcinoma vs Squamous</b><br>Not for clinical diagnosis or treatment decisions.<br>Weighted voting · Model fingerprint {MODEL_SHA256[:12]} · Interface 1.2</footer>', unsafe_allow_html=True)

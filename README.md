@@ -46,15 +46,15 @@ macOS / Linux：安装 Python 3.13 后执行 `bash run_mac.sh`。macOS 如 Light
 
 ## 模型与单位
 
-主层：I + M + N；主模型：Rotation Forest + Extra Trees → L2 Logistic Stacking。
+主层：I + M + N；主模型：Weighted voting。三个层级分别使用开发集既有10折折外结果锁定的非负权重，保留所有非零权重成员。各层使用同一份已保存的Platt校准参数，显示校准后概率。
 
 | 层 | 输入模型变量数 | 固定分类阈值 |
 | --- | ---: | ---: |
-| I | 4 | 0.7005904515139433 |
-| I + M | 6 | 0.7349164121493799 |
-| I + M + N | 13 | 0.6194277055171358 |
+| I | 4 | 0.7195352599559358 |
+| I + M | 6 | 0.7114709758684745 |
+| I + M + N | 13 | 0.6382746769019397 |
 
-阈值沿用既有开发集固定阈值，不在应用中重新估计。概率 ≥ 阈值判为腺癌，否则为鳞癌。腺癌 = 1，鳞癌 = 0。
+校准及最大Youden阈值均由A开发集既有10折折外预测确定，不在应用或验证队列中重新估计。概率 ≥ 阈值判为腺癌，否则为鳞癌。腺癌 = 1，鳞癌 = 0。
 
 完整输入 27 项：WBC、NEUT、NEUT_PCT、MONO、MONO_PCT、PLT、RDW_CV、CRP、FIB、LDH、LYMPH、LYMPH_PCT、EOS、EOS_PCT、BASO、BASO_PCT、HGB、ALB、TP、GLB、PA、GLU、TG、TC、HDL_C、LDL_C、UA。界面及字典均列明单位。
 
@@ -72,8 +72,9 @@ macOS / Linux：安装 Python 3.13 后执行 `bash run_mac.sh`。macOS 如 Light
 
 - `app.py` / `style.css`：交互界面与视觉样式。
 - `model_runtime.py`：单位说明、输入检查、原推理路径适配及下载。
-- `runtime/frozen_runtime.py` / `runtime/runtime_support/`：从现有模型包原样复制，SHA-256 可核对。
-- `assets/top2_stacking_model_package.pkl`：从现有模型制作的仅含推理必需对象的发布副本；不重新训练、不包含患者表格、训练审计或本机路径。
+- `runtime/weighted_runtime.py`：分析与部署共享的固定Weighted推理路径；完成插补及复合指标后保留10位小数，消除批量矩阵计算约10⁻¹³的数值噪声在树分裂边界上的放大，不作临床数值截尾。
+- `runtime/frozen_runtime.py` / `runtime/runtime_support/`：可信自定义分类器及复合指标支持代码，SHA-256 可核对。
+- `assets/weighted_voting_model_package.pkl`：2026-10-15重建的最终拟合及其固定权重、校准和阈值，仅含推理必需对象，不包含患者表格。
 - `assets/model_manifest.json`：模型指纹、版本与阈值来源。
 - `tests/`：预测一致性、批量、缺失值、安全输入、界面回归测试。
 
@@ -83,7 +84,7 @@ macOS / Linux：安装 Python 3.13 后执行 `bash run_mac.sh`。macOS 如 Light
 python -m unittest discover -s tests -v
 ```
 
-若位于原项目中，测试额外读取上级目录已知样本并核对预期结果；独立部署包中没有这些患者样本，此项自动跳过，其余测试正常执行。
+若位于原项目中，测试额外读取上级目录的合成固定例子并核对预期结果；独立部署包不带患者样本，该项可自动跳过，其余测试正常执行。
 
 工具不会拟合插补器、重选特征、调参、重新校准、优化阈值或改写既有结果。模型文件通过 SHA-256 核验后才加载，不接受上传 pickle 文件。
 

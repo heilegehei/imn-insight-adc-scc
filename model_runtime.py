@@ -1,4 +1,4 @@
-"""Validated UI adapter around the unchanged, saved Top-2 Stacking runtime.
+"""UI adapter around the saved, calibrated Weighted voting runtime.
 
 No fitting, feature selection, calibration, clipping or threshold search occurs
 here. Uploaded values are never written to disk or placed in a shared data cache.
@@ -23,15 +23,16 @@ for _name in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
 import numpy as np
 import pandas as pd
 from threadpoolctl import threadpool_limits
-from runtime import frozen_runtime
+from runtime import weighted_runtime as frozen_runtime
 
 ROOT = Path(__file__).resolve().parent
-MODEL_PATH = ROOT / "assets" / "top2_stacking_model_package.pkl"
-MODEL_SHA256 = "8ae7aa19e9608cbacac38736361e7d523502e411e31575446e2e7af8afe6a276"
+MODEL_PATH = ROOT / "assets" / "weighted_voting_model_package.pkl"
+_MANIFEST = json.loads((ROOT / "assets" / "model_manifest.json").read_text(encoding="utf-8"))
+MODEL_SHA256 = _MANIFEST["model_sha256"]
 DIRECT_COLUMNS = tuple(frozen_runtime.DIRECT_COLUMNS)
 LAYERS = tuple(frozen_runtime.LAYERS)
 LAYER_LABELS = dict(zip(LAYERS, ("I", "I + M", "I + M + N")))
-THRESHOLDS = dict(zip(LAYERS, (0.7005904515139433, 0.7349164121493799, 0.6194277055171358)))
+THRESHOLDS = {layer: float(_MANIFEST["thresholds"][layer]) for layer in LAYERS}
 MAIN_LAYER = LAYERS[-1]
 COMPOSITES = ("NLR", "SIRI", "LMR", "PNI", "AGR", "GAR")
 SELECTED_DIRECT = ("MONO", "FIB", "LYMPH_PCT", "GLB", "TG", "HDL_C", "UA")
@@ -94,8 +95,12 @@ def load_package():
     if package["imputer"].sample_posterior:
         raise RuntimeError("A deterministic frozen imputer is required.")
     for layer in LAYERS:
-        if list(package["layers"][layer]["stacking_meta"].classes_) != [0, 1]:
-            raise RuntimeError("Unexpected positive-class order.")
+        spec = package["layers"][layer]
+        if not np.isclose(spec["threshold"], THRESHOLDS[layer], atol=1e-12):
+            raise RuntimeError("The model threshold and manifest disagree.")
+        for member in spec["base_members"].values():
+            if list(member.classes_) != [0, 1]:
+                raise RuntimeError("Unexpected positive-class order.")
     return package
 
 
@@ -209,10 +214,11 @@ def score_frame(frame: pd.DataFrame) -> dict:
     result["missing_input_count"] = direct.isna().sum(axis=1)
     result["imputed_fields"] = direct.isna().apply(lambda row: ";".join(row.index[row]), axis=1)
     for layer in LAYERS:
-        p = predictions[f"{layer}__Stacking"].to_numpy()
+        p = predictions[f"{layer}__Weighted_Voting_calibrated"].to_numpy()
         if not np.isfinite(p).all() or ((p < 0) | (p > 1)).any():
             raise RuntimeError("The model returned invalid probabilities.")
         result[f"{layer}__adenocarcinoma_probability"] = p
+        result[f"{layer}__raw_adenocarcinoma_probability"] = predictions[f"{layer}__Weighted_Voting"].to_numpy()
         result[f"{layer}__threshold"] = THRESHOLDS[layer]
         result[f"{layer}__class"] = np.where(p >= THRESHOLDS[layer], "Adenocarcinoma", "Squamous cell carcinoma")
     for name in COMPOSITES:

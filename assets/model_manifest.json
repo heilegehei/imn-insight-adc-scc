@@ -1,22 +1,63 @@
 {
   "name": "IMN Insight — Adenocarcinoma vs Squamous",
-  "model": "Top-2 Stacking",
-  "members": ["RotationForest", "ExtraTrees"],
-  "meta_learner": "L2 LogisticRegression",
+  "model": "Weighted Voting",
+  "interface_version": "1.2.0",
+  "model_version": "2026-10-15",
   "positive_class": "Adenocarcinoma (1)",
   "negative_class": "Squamous cell carcinoma (0)",
-  "scope": "Conditional classification between confirmed adenocarcinoma and squamous cell carcinoma.",
   "primary_layer": "I_plus_M_plus_N",
   "direct_input_count": 27,
   "primary_selected_direct_count": 7,
   "fixed_composite_count": 6,
-  "thresholds": {"I": 0.7005904515139433, "I_plus_M": 0.7349164121493799, "I_plus_M_plus_N": 0.6194277055171358},
-  "threshold_source": "04_results/02_validation/fixed_threshold_confusion_matrices.csv",
-  "model_sha256": "8ae7aa19e9608cbacac38736361e7d523502e411e31575446e2e7af8afe6a276",
+  "candidate_base_model_count": 14,
+  "training_n": 651,
+  "thresholds": {
+    "I": 0.7195352599559358,
+    "I_plus_M": 0.7114709758684745,
+    "I_plus_M_plus_N": 0.6382746769019397
+  },
+  "weights": {
+    "I": {
+      "Logistic": 0.20347391872258058,
+      "GAM": 0.043032678036441764,
+      "ExtraTrees": 0.06655515747483398,
+      "LightGBM": 0.09217440028979852,
+      "AdaBoost": 0.011078051756095546,
+      "RotationForest": 0.5836857937202496
+    },
+    "I_plus_M": {
+      "Logistic": 0.176410409723274,
+      "RotationForest": 0.8235895902767261
+    },
+    "I_plus_M_plus_N": {
+      "Logistic": 2.343897350970626e-06,
+      "DecisionTree": 1.3929862474995782e-06,
+      "RotationForest": 0.9999962631164016
+    }
+  },
+  "calibration": {
+    "I": {
+      "intercept": 0.024642963996487438,
+      "slope": 0.9295742501603408,
+      "clip_epsilon": 1e-06
+    },
+    "I_plus_M": {
+      "intercept": 0.0734687022082969,
+      "slope": 0.8773792680973621,
+      "clip_epsilon": 1e-06
+    },
+    "I_plus_M_plus_N": {
+      "intercept": 0.21507349856380348,
+      "slope": 0.6629054572807862,
+      "clip_epsilon": 1e-06
+    }
+  },
+  "displayed_probability": "saved layer-specific Platt-calibrated weighted probability",
+  "calibration_and_threshold_source": "A-development 10-fold OOF predictions only",
+  "model_sha256": "ffc5201d2af2d963ccf882715240d43dcc3581b8bbdf252df34ef42ef48cb842",
+  "weighted_runtime_sha256": "ad427e9dbbcf54918c56c548304572bc7410e28d518b05a4fa43790335bcdacf",
   "frozen_runtime_sha256": "860064cc99f67ebf9399f04aadd764506410cb3d7fca8b4e3815b1eedcabfdbc",
   "formal_factory_sha256": "b6f17698e5b2583d4b6d04843d44e8b80c3a252972cb733f3f85ae017e8347ec",
   "integrated_factory_sha256": "11ab536c6921320963928a2a5730d8db8ea3a620d5d7c619450f8dd5564e74c5",
-  "interface_version": "1.1.0",
-  "created": "2026-09-26",
-  "interface_updated": "2026-09-27"
+  "scope": "Conditional classification between confirmed adenocarcinoma and squamous cell carcinoma."
 }

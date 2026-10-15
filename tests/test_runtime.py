@@ -21,7 +21,8 @@ class RuntimeTests(unittest.TestCase):
 
     def test_frozen_files_unchanged(self):
         manifest = rt.metadata()
-        files = {"model_sha256": rt.MODEL_PATH, "frozen_runtime_sha256": rt.ROOT / "runtime/frozen_runtime.py",
+        files = {"model_sha256": rt.MODEL_PATH, "weighted_runtime_sha256": rt.ROOT / "runtime/weighted_runtime.py",
+                 "frozen_runtime_sha256": rt.ROOT / "runtime/frozen_runtime.py",
                  "formal_factory_sha256": rt.ROOT / "runtime/runtime_support/formal_model_factory.py",
                  "integrated_factory_sha256": rt.ROOT / "runtime/runtime_support/integrated_model_factory.py"}
         for key, path in files.items():
@@ -30,10 +31,10 @@ class RuntimeTests(unittest.TestCase):
     def test_saved_fixture_parity_when_available(self):
         # These local source fixtures are intentionally not copied into this app.
         folder = rt.ROOT.parent
-        if not (folder / "known_input_fixture.csv").exists():
+        if not (folder / "weighted_known_input_fixture.csv").exists():
             self.skipTest("Source-project fixtures are not part of the deployment bundle")
-        source = pd.read_csv(folder / "known_input_fixture.csv")
-        expected = pd.read_csv(folder / "known_expected_predictions.csv")
+        source = pd.read_csv(folder / "weighted_known_input_fixture.csv")
+        expected = pd.read_csv(folder / "weighted_known_expected_predictions.csv")
         actual = rt.score_frame(source)["results"].set_index("analysis_row_id")
         max_error = 0.0
         for row in expected.itertuples(index=False):
@@ -50,7 +51,7 @@ class RuntimeTests(unittest.TestCase):
         reference = rt.frozen_runtime.predict_frame(self.package, frame)
         result = rt.score_frame(frame)["results"]
         for layer in rt.LAYERS:
-            np.testing.assert_allclose(reference[f"{layer}__Stacking"], result[f"{layer}__adenocarcinoma_probability"], atol=1e-12, rtol=0)
+            np.testing.assert_allclose(reference[f"{layer}__Weighted_Voting_calibrated"], result[f"{layer}__adenocarcinoma_probability"], atol=1e-12, rtol=0)
         self.assertEqual(list(result.missing_input_count), [0, 4])
 
     def test_composites_and_fixed_thresholds(self):
@@ -114,6 +115,20 @@ class RuntimeTests(unittest.TestCase):
             values = list(pool.map(lambda _: rt.score_frame(frame)["results"], range(3)))
         for value in values[1:]:
             pd.testing.assert_frame_equal(values[0], value)
+
+    def test_sparse_inputs_do_not_depend_on_batch_size(self):
+        # Constructed sparse records exercise tree boundaries after imputation.
+        sparse = self.example.copy()
+        sparse.loc[:, list(rt.DIRECT_COLUMNS[:10])] = np.nan
+        sparse.loc[:, ["LYMPH", "LYMPH_PCT", "EOS", "EOS_PCT", "BASO", "BASO_PCT", "HGB"]] = np.nan
+        batch_input = pd.concat([self.example, sparse, sparse], ignore_index=True)
+        batch_input.loc[2, "TG"] = 2.1
+        batch = rt.score_frame(batch_input)["results"]
+        for i in range(3):
+            single = rt.score_frame(batch_input.iloc[[i]])["results"]
+            for layer in rt.LAYERS:
+                col = f"{layer}__adenocarcinoma_probability"
+                self.assertAlmostEqual(batch.loc[i, col], single.loc[0, col], places=12)
 
     def test_export_protects_formula_ids(self):
         content = rt.export_csv(pd.DataFrame({"analysis_row_id": ["=1+1", " @SUM(A1)", "ordinary"], "p": [.2, .3, .4]})).decode("utf-8-sig")
